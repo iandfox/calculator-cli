@@ -10,8 +10,7 @@ const calculator = new Calculator();
 
 const loop = async () => {
   const input = await rl.question('> ');
-  const result = calculator.handleInput(input);
-  log(result);
+  calculator.handleInput(input);
   loop();
 };
 

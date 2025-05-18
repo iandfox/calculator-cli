@@ -50,7 +50,7 @@ export class Calculator {
       return x;
     }
 
-  return NaN;
+    return NaN;
   }
 
 
@@ -80,10 +80,39 @@ export class Calculator {
   _calculate(input) {
     let transformedInput = input;
     if (transformedInput.includes('*')) {
+
+
+
+      log('multiply: ' + input);
+
+
+
+
       return input.split('*').map((s) => {
         if (Calculator.isStringANumber(s)) {
+
+
+
+
+
+
+          log('  num:' + s); // TODO delete
+
+
+
+
+
+
           return Calculator.toNumber(s);
         } else {
+
+
+
+          log('  s:' + s); // TODO delete
+
+
+
+
           // Recursively calculate the substrings
           return this._calculate(s);
         }
@@ -91,10 +120,13 @@ export class Calculator {
     }
 
     if (transformedInput.includes('/')) {
+      log('divide: ' + input); // TODO delete
       return input.split('/').map((s) => {
         if (Calculator.isStringANumber(s)) {
+          log('  num:' + s); // TODO delete
           return Calculator.toNumber(s);
         } else {
+          log('  s:' + s); // TODO delete
           // Recursively calculate the substrings
           return this._calculate(s);
         }
@@ -102,10 +134,13 @@ export class Calculator {
     }
 
     if (transformedInput.includes('+')) {
+      log('add: ' + input); // TODO delete
       return input.split('+').map((s) => {
         if (Calculator.isStringANumber(s)) {
+          log('  num:' + s); // TODO delete
           return Calculator.toNumber(s);
         } else {
+          log('  s:' + s); // TODO delete
           // Recursively calculate the substrings
           return this._calculate(s);
         }
@@ -113,19 +148,23 @@ export class Calculator {
     }
 
     if (transformedInput.includes('-')) {
+      log('subtract: ' + input); // TODO delete
       return input.split('-').map((s) => {
         if (Calculator.isStringANumber(s)) {
+          log('  num:' + s); // TODO delete
           return Calculator.toNumber(s);
         } else {
+          log('  s:' + s); // TODO delete
           // Recursively calculate the substrings
           return this._calculate(s);
         }
-      }).reduce((acc, curr) => acc - curr, 0);
+      }).reduce((acc, curr) => (acc === null ? curr : acc - curr), null);
     }
 
 
-    // If we're here, then we hopefully just have a number on our hands
+    // If we're here, then we either have a number on our hands or invalid input
     if (Calculator.isStringANumber(input)) {
+      log('raw num:' + input); // TODO delete
       return Calculator.toNumber(input);
     } else {
       throw new Error(`Invalid input: ${input}`);
@@ -201,7 +240,7 @@ export class Calculator {
 
     // Store and show the new current value
     this.currentValue = newCurrentValue;
-    log(this.currentValue.toString()); // <-- note: all sorts of edge cases here which would make things look bad (long decimals, `E` notation, so on)
+    log(this.currentValue); // <-- note: all sorts of edge cases here which would make things look bad (long decimals, `E` notation, so on)
   }
 
 
