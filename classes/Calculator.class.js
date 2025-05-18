@@ -37,6 +37,22 @@ export class Calculator {
     return (input.match(/^\-?[0-9]+(?:\.[0-9]+)?$/) !== null);
   }
 
+  /**
+   * Convert a string to a number, put in a static method just for refactor-proofing
+   *
+   * @param {string} x
+   * @returns {number}
+   */
+  static toNumber = (x) => {
+    if (typeof x === 'string') {
+      return parseFloat(x);
+    } else if (typeof x === 'number') {
+      return x;
+    }
+
+  return NaN;
+  }
+
 
   constructor() {
     this.reset();
@@ -58,13 +74,62 @@ export class Calculator {
    * first improvement I'd otherwise want to make is convert from 'dumb' calculator to MDAS-aware calculator)
    *
    * @param {string} input A clean input that has already been run through handleInput
+   *
+   * @returns {number}
    */
   _calculate(input) {
     let transformedInput = input;
     if (transformedInput.includes('*')) {
-      const sp = input.split('*');
+      return input.split('*').map((s) => {
+        if (Calculator.isStringANumber(s)) {
+          return Calculator.toNumber(s);
+        } else {
+          // Recursively calculate the substrings
+          return this._calculate(s);
+        }
+      }).reduce((acc, curr) => acc * curr, 1);
     }
-    // TODO: WiP.
+
+    if (transformedInput.includes('/')) {
+      return input.split('/').map((s) => {
+        if (Calculator.isStringANumber(s)) {
+          return Calculator.toNumber(s);
+        } else {
+          // Recursively calculate the substrings
+          return this._calculate(s);
+        }
+      }).reduce((acc, curr) => (acc === null ? curr : acc / curr), null);
+    }
+
+    if (transformedInput.includes('+')) {
+      return input.split('+').map((s) => {
+        if (Calculator.isStringANumber(s)) {
+          return Calculator.toNumber(s);
+        } else {
+          // Recursively calculate the substrings
+          return this._calculate(s);
+        }
+      }).reduce((acc, curr) => acc + curr, 0);
+    }
+
+    if (transformedInput.includes('-')) {
+      return input.split('-').map((s) => {
+        if (Calculator.isStringANumber(s)) {
+          return Calculator.toNumber(s);
+        } else {
+          // Recursively calculate the substrings
+          return this._calculate(s);
+        }
+      }).reduce((acc, curr) => acc - curr, 0);
+    }
+
+
+    // If we're here, then we hopefully just have a number on our hands
+    if (Calculator.isStringANumber(input)) {
+      return Calculator.toNumber(input);
+    } else {
+      throw new Error(`Invalid input: ${input}`);
+    }
   }
 
 

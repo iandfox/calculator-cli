@@ -118,8 +118,25 @@ describe('Calculator Calculating Calculations', () => {
   it('handles multiple commands with single operations each', () => {
     c.reset();
     c.handleInput(' 7 ');
-    expect(c.currentValue).toBe(12);
+    expect(c.currentValue).toBe(7);
     c.handleInput(' + 11 ');
+    expect(c.currentValue).toBe(18);
+    c.handleInput(' - 5 ');
+    expect(c.currentValue).toBe(13);
+    c.handleInput(' *2 ');
+    expect(c.currentValue).toBe(26);
+    c.handleInput(' / 2');
+    expect(c.currentValue).toBe(13);
+    c.handleInput('- 100 ');
+    expect(c.currentValue).toBe(-87);
+    c.handleInput(' +13 ');
+    expect(c.currentValue).toBe(-74);
+    c.handleInput('!'); // Yeah yeah, this is kinda out of place, since we cover it else where. Just feels like we should throw it in while we're on a roll
+    expect(c.currentValue).toBe(74);
+    c.handleInput('-10');
+    expect(c.currentValue).toBe(64);
+    c.handleInput('!');
+    expect(c.currentValue).toBe(-64);
   });
 
   it('handles multiple commands with single and multiple operations', () => {
