@@ -46,7 +46,7 @@ from a correct solution:
   > 2+45
   45
   > =
-  47
+  47     // <-- see [1], below
   > *3=
   141
   > -8+12=
@@ -54,6 +54,8 @@ from a correct solution:
   > c
   0
 ```
+
+> [1] for the record, I think the prompt has a typo, and I'm going to assume that the intent is "the last operation was `+45`," and I'm also going to have the last operation be determined from MDAS ordering (because to expand the calculator, the first thing I'd do is MDAS ordering, anyway). Hope that's okay - Ian, 2025-05-18
 
 Your application can be written in whatever language/framework you are most comfortable in.
 It must work like a standard calculator. Note that you are not required to implement the

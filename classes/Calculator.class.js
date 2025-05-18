@@ -89,7 +89,11 @@ export class Calculator {
    * @param {*} input
    */
   handleInput(input) {
-    input = input.toString(); // just in case
+
+    // TODO 2025-05-18: keep track of the most recent operation (perhaps this would go in `calculate()` instead?) to facilitate the `"="` command
+
+
+    input = input.toString().trim(); // just in case
 
     // Strip everything out so we have a clean/predicatably-written string
     input = this.cleanInput(input);
@@ -112,8 +116,8 @@ export class Calculator {
       // regex is 'from start to finish, only numbers'. TODO 2025-05-17: this would allow for multiple decimal points
       // Replace current value
       newCurrentValue = parseFloat(input);
-    } else if (input.match(/^[0-9+\-\*\/c\./]+$/)) {
-      // regex is 'numbers and ops all the way through'
+    } else if (input.match(/^(?:[0-9+\-\*\/c\./]+)?[0-9]+(?:\.[0-9]+)?$/)) { // TODO 2025-05-18: add more refined handling to ensure that, say, `"10 +"` is an error
+      // regex is 'numbers and ops all the way through, ending with a number'
       // If input starts with an operator, we assume the user wants to apply that operator to the current value
       if (input.match(/^[+\-\*\/]/)) {
         // Prepend current value to the string, and handle it the same as we handle a solo string
