@@ -2,11 +2,17 @@ import { CalculatorError } from "./CalculatorError.class.js";
 
 export class Calculator {
   currentValue = 0;
-  queue = [];
 
+  constructor() {
+    this.reset();
+  }
+
+  /**
+   * Resets.
+   */
   reset() {
     this.currentValue = 0;
-    this.queue = [];
+    print("- Memory cleared -");
   }
 
   /**
@@ -35,28 +41,30 @@ export class Calculator {
     // Strip everything out so we have a clean/predicatably-written string
     input = this.cleanInput(input);
 
+    let newCurrentValue = this.currentValue;
+
     if (input === "") {
-      // Nothing. Just show the current value
-      // TODO 2025-05-17: Show current value -- not just here, but probably everywhere
+      // Nothing. Just show the current value (later on)
     } else if (input === "c") {
       // Acts like the 'AC' button and clears out the current value and any pending operations (if this were a physical calculator, anyway)
       this.reset();
-      // TODO 2025-05-17: Show message about clearing stuff out
+      // this.currentValue gets set in reset(), but let's be consistent so future error checking works
+      newCurrentValue = this.currentValue;
     } else if (input === "!") {
       // Negate the current value
-      this.currentValue = -1 * this.currentValue;
+      newCurrentValue = -1 * this.currentValue;
     } else if (input === "=") {
       // TODO 2025-05-17: Redo the most recent operation.
     } else if (input.match(/^[0-9]+$/)) {
       // regex is 'from start to finish, only numbers'
       // Replace current value
-      this.currentValue = parseFloat(input);
+      newCurrentValue = parseFloat(input);
     } else if (input.match(/^[0-9+\-\*\/c\./]+$/)) {
       // regex is 'numbers and ops all the way through'
       // If input starts with an operator, we assume the user wants to apply that operator to the current value
       if (input.match(/^[+\-\*\/]/)) {
         // Prepend current value to the string, and handle it the same as we handle a solo string
-        input = `${this.currentValue.toString()}${input}`;
+        input = `${newCurrentValue.toString()}${input}`;
       }
       // TODO 2025-05-17: Recursive handling of operations
     } else {
@@ -66,7 +74,10 @@ export class Calculator {
 
     // TODO 2025-05-17: show a message about the operations that were done, maybe. could do some color coding
 
-    // Show the new current value
+    // TODO 2025-05-17: do some basic error checking for newCurrentValue (e.g., isNaN) and throw an error if something went wrong
+
+    // Store and show the new current value
+    this.currentValue = newCurrentValue;
     print(this.currentValue.toString()); // <-- note: all sorts of edge cases here which will make things look bad (long decimals, `E` notation, so on)
   }
 
