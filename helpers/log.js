@@ -3,6 +3,6 @@
  *
  * @param {*} message
  */
-export const print = (message) => {
+export const log = (message) => {
   console.log(message);
 };

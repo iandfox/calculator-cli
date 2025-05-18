@@ -1,11 +1,17 @@
-import * as readline from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
-import process from "node:process";
+import * as readline from 'node:readline/promises';
+import { stdin as input, stdout as output } from 'node:process';
+import process from 'node:process'; // can't import `on` from `process` apparently
+import { Calculator } from './classes/Calculator.class.js';
+import { log } from './helpers/log.js';
 
 const rl = readline.createInterface({ input, output });
 
+const calculator = new Calculator();
+
 const loop = async () => {
-  const answer = await rl.question("> ");
+  const input = await rl.question('> ');
+  const result = calculator.handleInput(input);
+  log(result);
   loop();
 };
 

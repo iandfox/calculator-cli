@@ -1,23 +1,42 @@
 import { CalculatorError } from "./CalculatorError.class.js";
+import { log } from "../helpers/log.js";
 
 export class Calculator {
+  /** @var {number} currentValue */
   currentValue = 0;
 
+  /**
+   * Is somethin' a number?
+   *
+   * @param {*} input
+   *
+   * @returns boolean
+   */
   static isNumber(input) {
     // Pick your poison:
     // return typeof input === 'number' && ! isNaN(input);
     // return isFinite(input); // we would want it coerced to a number
     // return input.toString().match(/^\-?[0-9\.]+$/); // // TODO 2025-05-17: if this regex method is used, note that it allows for multiple decimal points
-    return typeof input === 'number' && ! isNaN(input);
+    return (typeof input === 'number' && ! isNaN(input));
     // It feels as though every few years I look up the best way to check if something is a number, and no one has a good answer in JS
   }
 
+
+  /**
+   * Is this string a number?
+   *
+   * @param {string} input
+   *
+   * @returns boolean
+   */
   static isStringANumber(input) {
     if (typeof input !== 'string') {
       return false;
     }
-    return input.match(/^\-?[0-9]+(?:\.[0-9]+)?$/) !== null;
+
+    return (input.match(/^\-?[0-9]+(?:\.[0-9]+)?$/) !== null);
   }
+
 
   constructor() {
     this.reset();
@@ -29,18 +48,23 @@ export class Calculator {
    */
   reset() {
     this.currentValue = 0;
-    print("- Memory cleared -");
+    log("- Memory cleared -");
   }
 
+
   /**
-   * Collapse a string of numbers and operators according to EMDAS order (note: not sure if intention is to handle
-   * operations as a queue, as the frontend app would, or if EMDAS is preferred. I went with EMDAS since probably the
-   * first improvement I'd otherwise want to make is convert from 'dumb' calculator to EMDAS-aware calculator)
+   * Collapse a string of numbers and operators according to MDAS order (note: not sure if intention is to handle
+   * operations as a queue, as the frontend app would, or if MDAS is preferred. I went with MDAS since probably the
+   * first improvement I'd otherwise want to make is convert from 'dumb' calculator to MDAS-aware calculator)
    *
-   * @param {string} input A clean input that has already been run through handleInput (or you can just trust the user)
+   * @param {string} input A clean input that has already been run through handleInput
    */
-  calculate(input) {
-    const sp = input.split(/[\+\-\*\/]/);
+  _calculate(input) {
+    let transformedInput = input;
+    if (transformedInput.includes('*')) {
+      const sp = input.split('*');
+    }
+    // TODO: WiP.
   }
 
 
@@ -96,7 +120,7 @@ export class Calculator {
         input = `${newCurrentValue.toString()}${input}`;
         // note that this, too, intentionally does not allow for `"-1"` to be considered `negative one`; rather it'll be `current value - 1`
       }
-      newCurrentValue = this.calculate(input);
+      newCurrentValue = this._calculate(input);
     } else {
       // If we're here, then something has gone horribly horribly wrong
       throw new CalculatorError(`Invalid input: ${input}`);
@@ -108,7 +132,7 @@ export class Calculator {
 
     // Store and show the new current value
     this.currentValue = newCurrentValue;
-    print(this.currentValue.toString()); // <-- note: all sorts of edge cases here which would make things look bad (long decimals, `E` notation, so on)
+    log(this.currentValue.toString()); // <-- note: all sorts of edge cases here which would make things look bad (long decimals, `E` notation, so on)
   }
 
 
