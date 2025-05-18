@@ -16,7 +16,7 @@ export class Calculator {
     if (typeof input !== 'string') {
       return false;
     }
-    return input.match(/^\-?[0-9]+(?:\.[0-9]+)?$/);
+    return input.match(/^\-?[0-9]+(?:\.[0-9]+)?$/) !== null;
   }
 
   constructor() {
@@ -40,7 +40,7 @@ export class Calculator {
    * @param {string} input A clean input that has already been run through handleInput (or you can just trust the user)
    */
   calculate(input) {
-    const sp = input.split(/[+-*/]/);
+    const sp = input.split(/[\+\-\*\/]/);
   }
 
 
