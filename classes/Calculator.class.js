@@ -1,5 +1,5 @@
 import { CalculatorError } from "./CalculatorError.class.js";
-import { log } from "../helpers/log.js";
+import { log, debugLog } from "../helpers/log.js";
 
 export class Calculator {
   /** @var {number} currentValue */
@@ -64,7 +64,7 @@ export class Calculator {
    */
   reset() {
     this.currentValue = 0;
-    log("- Memory cleared -");
+    debugLog("- Memory cleared -");
   }
 
 
@@ -77,56 +77,56 @@ export class Calculator {
    *
    * @returns {number}
    */
-  _calculate(input) {
+  _calculate(input, debugLogIndent = '') {
     let transformedInput = input;
 
     if (transformedInput.includes('-')) {
-      log('subtract: ' + input); // TODO delete
+      debugLog(debugLogIndent + 'subtract: ' + input); // TODO delete
       return input.split('-').map((s) => {
         if (Calculator.isStringANumber(s)) {
-          log('  num:' + s); // TODO delete
+          debugLog(debugLogIndent + '  num:' + s); // TODO delete
           return Calculator.toNumber(s);
         } else {
-          log('  s:' + s); // TODO delete
+          debugLog(debugLogIndent + '  s:' + s); // TODO delete
           // Recursively calculate the substrings
-          return this._calculate(s);
+          return this._calculate(s, debugLogIndent + '  ');
         }
       }).reduce((acc, curr) => (acc === null ? curr : acc - curr), null);
     }
     if (transformedInput.includes('+')) {
-      log('add: ' + input); // TODO delete
+      debugLog(debugLogIndent + 'add: ' + input); // TODO delete
       return input.split('+').map((s) => {
         if (Calculator.isStringANumber(s)) {
-          log('  num:' + s); // TODO delete
+          debugLog(debugLogIndent + '  num:' + s); // TODO delete
           return Calculator.toNumber(s);
         } else {
-          log('  s:' + s); // TODO delete
+          debugLog(debugLogIndent + '  s:' + s); // TODO delete
           // Recursively calculate the substrings
-          return this._calculate(s);
+          return this._calculate(s, debugLogIndent + '  ');
         }
       }).reduce((acc, curr) => acc + curr, 0);
     }
     if (transformedInput.includes('/')) {
-      log('divide: ' + input); // TODO delete
+      debugLog(debugLogIndent + 'divide: ' + input); // TODO delete
       return input.split('/').map((s) => {
         if (Calculator.isStringANumber(s)) {
-          log('  num:' + s); // TODO delete
+          debugLog(debugLogIndent + '  num:' + s); // TODO delete
           return Calculator.toNumber(s);
         } else {
-          log('  s:' + s); // TODO delete
+          debugLog(debugLogIndent + '  s:' + s); // TODO delete
           // Recursively calculate the substrings
-          return this._calculate(s);
+          return this._calculate(s, debugLogIndent + '  ');
         }
       }).reduce((acc, curr) => (acc === null ? curr : acc / curr), null);
     }
     if (transformedInput.includes('*')) {
-      log('multiply: ' + input);
+      debugLog(debugLogIndent + 'multiply: ' + input);
       return input.split('*').map((s) => {
         if (Calculator.isStringANumber(s)) {
-          log('  num:' + s); // TODO delete
+          debugLog(debugLogIndent + '  num:' + s); // TODO delete
           return Calculator.toNumber(s);
         } else {
-          log('  s:' + s); // TODO delete
+          debugLog(debugLogIndent + '  s:' + s); // TODO delete
 
           // Recursively calculate the substrings
           return this._calculate(s);
@@ -139,7 +139,7 @@ export class Calculator {
 
     // If we're here, then we either have a number on our hands or invalid input
     if (Calculator.isStringANumber(input)) {
-      log('raw num:' + input); // TODO delete
+      debugLog(debugLogIndent + 'raw num:' + input); // TODO delete
       return Calculator.toNumber(input);
     } else {
       throw new Error(`Invalid input: ${input}`);

@@ -106,6 +106,8 @@ describe('Calculator Calculating Calculations', () => {
     expect(c.currentValue).toBe(-3);
     c.handleInput('13 *21');
     expect(c.currentValue).toBe(273);
+    c.handleInput('-10*5'); // occurs organically during parsing
+    expect(c.currentValue).toBe(273);
     c.handleInput('273 / 21');
     expect(c.currentValue).toBe(34);
   });
