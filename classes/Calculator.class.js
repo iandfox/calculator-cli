@@ -37,17 +37,23 @@ export class Calculator {
       return false;
     }
 
-    return (input.match(/^\-?[0-9]+(?:\.[0-9]+)?$/) !== null);
+    return (input.match(/^[\-\!]?[0-9]+(?:\.[0-9]+)?$/) !== null); // Note v1.0.2: added `!` to account for our little minus sign / negative sign replacement
   }
 
   /**
-   * Convert a string to a number, put in a static method just for refactor-proofing
+   * Convert a string to a number[, put in a static method just for refactor-proofing] and also
+   * account for the `!` negative sign hack, where we might have "!" instead of "-"
+   *
+   * @since v1.0.2 lol, this function proved its worth so quickly!
    *
    * @param {string} x
    * @returns {number}
    */
   static toNumber = (x) => {
     if (typeof x === 'string') {
+      if (x.startsWith('!')) {
+        x = '-' + x.slice(1);
+      }
       return parseFloat(x);
     } else if (typeof x === 'number') {
       return x;
@@ -66,9 +72,9 @@ export class Calculator {
    * Resets.
    */
   reset() {
+    debugLog("Memory cleared");
     this.currentValue = 0;
     this.lastOperation = null;
-    debugLog("- Memory cleared -");
   }
 
 
@@ -86,19 +92,39 @@ export class Calculator {
    *                             careful, considered testing, to start.
    *                             edit, 10 minutes later: Yeah okay, we just do not like negative numbers
    *                             for currentValue
+   *                             edit, 30 minutes later: Alright, I think it's fixed. The tests need to be
+   *                             written/updated though
    *
    *
    *
    * @param {string} input A clean input that has already been run through handleInput
+   * @param {string} debugLogIndent Optional, just increases indentation as this fn gets recursively called
    *
    * @returns {number}
    */
   _calculate(input, debugLogIndent = '') {
-    let transformedInput = input; // TODO 2025-05-18: I don't think we actually need this
+    let transformedInput = input;
 
     if (transformedInput.includes('-')) {
-      debugLog(debugLogIndent + 'subtract: ' + input);
-      return input.split('-').map((s) => { // TODO 2025-05-18: keep it DRY
+      /// Transform dashes which represent negative numbers into exclamation marks:
+
+      const negativeSignAtStartRegex = /^-/;
+      if (transformedInput.match(negativeSignAtStartRegex) !== null) {
+        transformedInput = transformedInput.replace(negativeSignAtStartRegex, '!');
+      }
+
+      const negativeSignBeforeNumberAfterOperatorRegex = /(?<=[^0-9])\-(?=[0-9])/;
+      const negativeSignBeforeNumberAfterOperatorRegex_g = /(?<=[^0-9])\-(?=[0-9])/g; // There's probably an easy way to transform the above into a global, but this'll do
+
+      if (transformedInput.match(negativeSignBeforeNumberAfterOperatorRegex) !== null) {
+        transformedInput = transformedInput.replace(negativeSignBeforeNumberAfterOperatorRegex_g, '!');
+      }
+    }
+
+
+    if (transformedInput.includes('-')) {
+      debugLog(debugLogIndent + 'subtract: ' + transformedInput);
+      return transformedInput.split('-').map((s) => { // TODO 2025-05-18: keep it DRY
         if (Calculator.isStringANumber(s)) {
           debugLog(debugLogIndent + '  num:' + s);
           return Calculator.toNumber(s);
@@ -112,7 +138,12 @@ export class Calculator {
           // initialize acc as curr
           return curr;
         } else {
-          this.lastOperation = `-${curr}`; // TODO 2025-05-18: potential bug here if `curr` is negative
+          if (curr < 0) {
+            this.lastOperation = `+${Math.abs(curr)}`;
+          } else {
+            this.lastOperation = `-${curr}`;
+          }
+
           return (acc - curr);
         }
       }, null);
@@ -120,7 +151,7 @@ export class Calculator {
 
     if (transformedInput.includes('+')) {
       debugLog(debugLogIndent + 'add: ' + input);
-      return input.split('+').map((s) => {
+      return transformedInput.split('+').map((s) => {
         if (Calculator.isStringANumber(s)) {
           debugLog(debugLogIndent + '  num:' + s);
           return Calculator.toNumber(s);
@@ -130,14 +161,19 @@ export class Calculator {
           return this._calculate(s, debugLogIndent + '  ');
         }
       }).reduce((acc, curr) => {
-        this.lastOperation = `+${curr}`; // TODO 2025-05-18: potential bug here if `curr` is negative
+        if (curr < 0) {
+          this.lastOperation = `-${Math.abs(curr)}`;
+        } else {
+          this.lastOperation = `+${curr}`;
+        }
+
         return acc + curr;
       }, 0);
     }
 
     if (transformedInput.includes('/')) {
       debugLog(debugLogIndent + 'divide: ' + input);
-      return input.split('/').map((s) => {
+      return transformedInput.split('/').map((s) => {
         if (Calculator.isStringANumber(s)) {
           debugLog(debugLogIndent + '  num:' + s);
           return Calculator.toNumber(s);
@@ -157,7 +193,7 @@ export class Calculator {
     }
     if (transformedInput.includes('*')) {
       debugLog(debugLogIndent + 'multiply: ' + input);
-      return input.split('*').map((s) => {
+      return transformedInput.split('*').map((s) => {
         if (Calculator.isStringANumber(s)) {
           debugLog(debugLogIndent + '  num:' + s);
           return Calculator.toNumber(s);
@@ -178,11 +214,11 @@ export class Calculator {
 
 
     // If we're here, then we either have a number on our hands or invalid input
-    if (Calculator.isStringANumber(input)) {
-      debugLog(debugLogIndent + 'raw num:' + input); // TODO delete
-      return Calculator.toNumber(input);
+    if (Calculator.isStringANumber(transformedInput)) {
+      debugLog(debugLogIndent + 'raw num:' + transformedInput); // TODO delete
+      return Calculator.toNumber(transformedInput);
     } else {
-      throw new CalculatorError(`Invalid input: ${input}`);
+      throw new CalculatorError(`Invalid input ${transformedInput}`);
     }
   }
 
@@ -265,7 +301,7 @@ export class Calculator {
       debugLog(`  (last op: ${this.lastOperation})`);
     } catch (error) {
       if (error instanceof CalculatorError) {
-        log(`ERROR: ${error.message}. Resetting state`);
+        log(`ERROR: ${error} Resetting state`);
         this.reset();
       } else {
         throw error;
