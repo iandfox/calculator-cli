@@ -94,7 +94,7 @@ export class Calculator {
    * @returns {number}
    */
   _calculate(input, debugLogIndent = '') {
-    let transformedInput = input;
+    let transformedInput = input; // TODO 2025-05-18: I don't think we actually need this
 
     if (transformedInput.includes('-')) {
       debugLog(debugLogIndent + 'subtract: ' + input);
@@ -182,7 +182,7 @@ export class Calculator {
       debugLog(debugLogIndent + 'raw num:' + input); // TODO delete
       return Calculator.toNumber(input);
     } else {
-      throw new Error(`Invalid input: ${input}`);
+      throw new CalculatorError(`Invalid input: ${input}`);
     }
   }
 
@@ -208,59 +208,69 @@ export class Calculator {
    * @param {*} input
    */
   handleInput(input) {
-    input = input.toString().trim(); // just in case
+    try {
 
-    // Strip everything out so we have a clean/predicatably-written string
-    input = this.cleanInput(input);
+      input = input.toString().trim(); // just in case
 
-    let newCurrentValue = this.currentValue;
+      // Strip everything out so we have a clean/predicatably-written string
+      input = this.cleanInput(input);
 
-    if (input === '') {
-      // Nothing. Just show the current value (later on)
-    } else if (input === 'c') {
-      // Acts like the 'AC' button and clears out the current value and any pending operations (if this were a physical calculator, anyway)
-      this.reset();
-      // this.currentValue gets set in reset(), but let's be consistent so later error checking works
-      newCurrentValue = this.currentValue;
-    } else if (input === '!') {
-      // Negate the current value
-      newCurrentValue = -1 * this.currentValue;
-      this.lastOperation = '!';
-    } else if (input === '=') {
-      if (this.lastOperation !== null) {
-        this.handleInput(this.lastOperation);
+      let newCurrentValue = this.currentValue;
 
-        // exit early. we don't want the rest of the function to run
-        return;
+      if (input === '') {
+        // Nothing. Just show the current value (later on)
+      } else if (input === 'c') {
+        // Acts like the 'AC' button and clears out the current value and any pending operations (if this were a physical calculator, anyway)
+        this.reset();
+        // this.currentValue gets set in reset(), but let's be consistent so later error checking works
+        newCurrentValue = this.currentValue;
+      } else if (input === '!') {
+        // Negate the current value
+        newCurrentValue = -1 * this.currentValue;
+        this.lastOperation = '!';
+      } else if (input === '=') {
+        if (this.lastOperation !== null) {
+          this.handleInput(this.lastOperation);
+
+          // exit early. we don't want the rest of the function to run
+          return;
+        }
+        // note: intentionally not setting a new lastOperation
+      } else if (input.match(/^[0-9\.]+$/)) { // note that this intentionally does not allow for "-1" to be considered `negative one`; rather it'll be `current value - 1`
+        // regex is 'from start to finish, only numbers'. TODO 2025-05-17: this would allow for multiple decimal points
+        // Replace current value
+        newCurrentValue = parseFloat(input);
+        // note: intentionally not setting a new lastOperation
+      } else if (input.match(/^(?:[0-9+\-\*\/c\./]+)?[0-9]+(?:\.[0-9]+)?$/)) { // TODO 2025-05-18: add more refined handling to ensure that, say, `"10 +"` is an error
+        // regex is 'numbers and ops all the way through, ending with a number'
+        // If input starts with an operator, we assume the user wants to apply that operator to the current value
+        if (input.match(/^[+\-\*\/]/)) {
+          // Prepend current value to the string, and handle it the same as we handle a solo string
+          input = `${newCurrentValue.toString()}${input}`;
+          // note that this, too, intentionally does not allow for `"-1"` to be considered `negative one`; rather it'll be `current value - 1`
+        }
+        newCurrentValue = this._calculate(input);
+      } else {
+        // If we're here, then something has gone horribly horribly wrong
+        throw new CalculatorError(`Invalid input: ${input} (it's probably from operating on a negative number)`);
       }
-      // note: intentionally not setting a new lastOperation
-    } else if (input.match(/^[0-9\.]+$/)) { // note that this intentionally does not allow for "-1" to be considered `negative one`; rather it'll be `current value - 1`
-      // regex is 'from start to finish, only numbers'. TODO 2025-05-17: this would allow for multiple decimal points
-      // Replace current value
-      newCurrentValue = parseFloat(input);
-      // note: intentionally not setting a new lastOperation
-    } else if (input.match(/^(?:[0-9+\-\*\/c\./]+)?[0-9]+(?:\.[0-9]+)?$/)) { // TODO 2025-05-18: add more refined handling to ensure that, say, `"10 +"` is an error
-      // regex is 'numbers and ops all the way through, ending with a number'
-      // If input starts with an operator, we assume the user wants to apply that operator to the current value
-      if (input.match(/^[+\-\*\/]/)) {
-        // Prepend current value to the string, and handle it the same as we handle a solo string
-        input = `${newCurrentValue.toString()}${input}`;
-        // note that this, too, intentionally does not allow for `"-1"` to be considered `negative one`; rather it'll be `current value - 1`
+
+      // TODO 2025-05-17: show a message about the operations that were done, maybe. could do some color coding
+
+      // TODO 2025-05-17: do some basic error checking for newCurrentValue (e.g., isNaN) and throw an error if something went wrong
+
+      // Store and show the new current value
+      this.currentValue = newCurrentValue;
+      log(this.currentValue); // <-- note: all sorts of edge cases here which would make things look bad (long decimals, `E` notation, so on)
+      debugLog(`  (last op: ${this.lastOperation})`);
+    } catch (error) {
+      if (error instanceof CalculatorError) {
+        log(`ERROR: ${error.message}. Resetting state`);
+        this.reset();
+      } else {
+        throw error;
       }
-      newCurrentValue = this._calculate(input);
-    } else {
-      // If we're here, then something has gone horribly horribly wrong
-      throw new CalculatorError(`Invalid input: ${input}`);
     }
-
-    // TODO 2025-05-17: show a message about the operations that were done, maybe. could do some color coding
-
-    // TODO 2025-05-17: do some basic error checking for newCurrentValue (e.g., isNaN) and throw an error if something went wrong
-
-    // Store and show the new current value
-    this.currentValue = newCurrentValue;
-    log(this.currentValue); // <-- note: all sorts of edge cases here which would make things look bad (long decimals, `E` notation, so on)
-    debugLog(`  (last op: ${this.lastOperation})`);
   }
 
 
