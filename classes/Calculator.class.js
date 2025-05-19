@@ -288,7 +288,7 @@ export class Calculator {
         newCurrentValue = this._calculate(input);
       } else {
         // If we're here, then something has gone horribly horribly wrong
-        throw new CalculatorError(`Invalid input: ${input} (it's probably from operating on a negative number)`);
+        throw new CalculatorError(`Invalid input: ${input}`);
       }
 
       // TODO 2025-05-17: show a message about the operations that were done, maybe. could do some color coding
