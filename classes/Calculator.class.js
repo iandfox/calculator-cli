@@ -5,8 +5,8 @@ export class Calculator {
   /** @var {number} currentValue */
   currentValue = 0;
 
-  /** @var {{ operator: string, value: number }} */
-  lastOperation = { operator: null, value: null };
+  /** @var {string|null} */
+  lastOperation = null;
 
   /**
    * Is somethin' a number?
@@ -67,7 +67,7 @@ export class Calculator {
    */
   reset() {
     this.currentValue = 0;
-    this.lastOperation = { operator: null, value: null };
+    this.lastOperation = null;
     debugLog("- Memory cleared -");
   }
 
@@ -76,6 +76,18 @@ export class Calculator {
    * Collapse a string of numbers and operators according to MDAS order (note: not sure if intention is to handle
    * operations as a queue, as the frontend app would, or if MDAS is preferred. I went with MDAS since probably the
    * first improvement I'd otherwise want to make is convert from 'dumb' calculator to MDAS-aware calculator)
+   *
+   * I realized after a bit that I needed to parse things 'inside-out,' so that the calculations would be performed
+   * correctly.
+   *
+   *
+   * TODO 2025-05-18 at the end: I'm not convinced that I've thought through all the cases for parsing a
+   *                             negative/minus sign. That's definitely something that will take
+   *                             careful, considered testing, to start.
+   *                             edit, 10 minutes later: Yeah okay, we just do not like negative numbers
+   *                             for currentValue
+   *
+   *
    *
    * @param {string} input A clean input that has already been run through handleInput
    *
@@ -86,7 +98,7 @@ export class Calculator {
 
     if (transformedInput.includes('-')) {
       debugLog(debugLogIndent + 'subtract: ' + input);
-      return input.split('-').map((s) => {
+      return input.split('-').map((s) => { // TODO 2025-05-18: keep it DRY
         if (Calculator.isStringANumber(s)) {
           debugLog(debugLogIndent + '  num:' + s);
           return Calculator.toNumber(s);
@@ -95,8 +107,17 @@ export class Calculator {
           // Recursively calculate the substrings
           return this._calculate(s, debugLogIndent + '  ');
         }
-      }).reduce((acc, curr) => (acc === null ? curr : acc - curr), null);
+      }).reduce((acc, curr) => {
+        if (acc === null) {
+          // initialize acc as curr
+          return curr;
+        } else {
+          this.lastOperation = `-${curr}`; // TODO 2025-05-18: potential bug here if `curr` is negative
+          return (acc - curr);
+        }
+      }, null);
     }
+
     if (transformedInput.includes('+')) {
       debugLog(debugLogIndent + 'add: ' + input);
       return input.split('+').map((s) => {
@@ -108,8 +129,12 @@ export class Calculator {
           // Recursively calculate the substrings
           return this._calculate(s, debugLogIndent + '  ');
         }
-      }).reduce((acc, curr) => acc + curr, 0);
+      }).reduce((acc, curr) => {
+        this.lastOperation = `+${curr}`; // TODO 2025-05-18: potential bug here if `curr` is negative
+        return acc + curr;
+      }, 0);
     }
+
     if (transformedInput.includes('/')) {
       debugLog(debugLogIndent + 'divide: ' + input);
       return input.split('/').map((s) => {
@@ -121,7 +146,14 @@ export class Calculator {
           // Recursively calculate the substrings
           return this._calculate(s, debugLogIndent + '  ');
         }
-      }).reduce((acc, curr) => (acc === null ? curr : acc / curr), null);
+      }).reduce((acc, curr) => {
+        if (acc === null) {
+          return curr;
+        } else {
+          this.lastOperation = `/${curr}`;
+          return acc / curr;
+        }
+      }, null);
     }
     if (transformedInput.includes('*')) {
       debugLog(debugLogIndent + 'multiply: ' + input);
@@ -135,10 +167,14 @@ export class Calculator {
           // Recursively calculate the substrings
           return this._calculate(s);
         }
-      }).reduce((acc, curr) => acc * curr, 1);
+      }).reduce((acc, curr) => {
+        this.lastOperation = `*${curr}`;
+        return acc * curr
+      }, 1);
     }
 
 
+    // TODO 2025-05-18: exponentiation goes here
 
 
     // If we're here, then we either have a number on our hands or invalid input
@@ -172,10 +208,6 @@ export class Calculator {
    * @param {*} input
    */
   handleInput(input) {
-
-    // TODO 2025-05-18: keep track of the most recent operation (perhaps this would go in `calculate()` instead?) to facilitate the `"="` command
-
-
     input = input.toString().trim(); // just in case
 
     // Strip everything out so we have a clean/predicatably-written string
@@ -183,22 +215,30 @@ export class Calculator {
 
     let newCurrentValue = this.currentValue;
 
-    if (input === "") {
+    if (input === '') {
       // Nothing. Just show the current value (later on)
-    } else if (input === "c") {
+    } else if (input === 'c') {
       // Acts like the 'AC' button and clears out the current value and any pending operations (if this were a physical calculator, anyway)
       this.reset();
-      // this.currentValue gets set in reset(), but let's be consistent so future error checking works
+      // this.currentValue gets set in reset(), but let's be consistent so later error checking works
       newCurrentValue = this.currentValue;
-    } else if (input === "!") {
+    } else if (input === '!') {
       // Negate the current value
       newCurrentValue = -1 * this.currentValue;
-    } else if (input === "=") {
-      // TODO 2025-05-17: Redo the most recent operation.
+      this.lastOperation = '!';
+    } else if (input === '=') {
+      if (this.lastOperation !== null) {
+        this.handleInput(this.lastOperation);
+
+        // exit early. we don't want the rest of the function to run
+        return;
+      }
+      // note: intentionally not setting a new lastOperation
     } else if (input.match(/^[0-9\.]+$/)) { // note that this intentionally does not allow for "-1" to be considered `negative one`; rather it'll be `current value - 1`
       // regex is 'from start to finish, only numbers'. TODO 2025-05-17: this would allow for multiple decimal points
       // Replace current value
       newCurrentValue = parseFloat(input);
+      // note: intentionally not setting a new lastOperation
     } else if (input.match(/^(?:[0-9+\-\*\/c\./]+)?[0-9]+(?:\.[0-9]+)?$/)) { // TODO 2025-05-18: add more refined handling to ensure that, say, `"10 +"` is an error
       // regex is 'numbers and ops all the way through, ending with a number'
       // If input starts with an operator, we assume the user wants to apply that operator to the current value
@@ -220,6 +260,7 @@ export class Calculator {
     // Store and show the new current value
     this.currentValue = newCurrentValue;
     log(this.currentValue); // <-- note: all sorts of edge cases here which would make things look bad (long decimals, `E` notation, so on)
+    debugLog(`  (last op: ${this.lastOperation})`);
   }
 
 

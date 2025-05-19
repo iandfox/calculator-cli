@@ -8,5 +8,5 @@ export const log = (message) => {
 };
 
 export const debugLog = (message) => {
-  // console.log(message);
+  console.log(message);
 };
